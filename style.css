@@ -1,0 +1,177 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Poppins", sans-serif;
+}
+
+body {
+    background: #f5f7fa;
+    padding: 20px;
+}
+
+/* HEADER */
+header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+header h1 {
+    font-size: 2.5rem;
+    color: #333;
+}
+
+header p {
+    color: #555;
+    margin-top: 5px;
+}
+
+/* ADD TASK */
+.add-task {
+    background: #fff;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 25px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.add-task h2 {
+    margin-bottom: 15px;
+    color: #333;
+}
+
+.add-task input, 
+.add-task textarea {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 12px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+}
+
+.add-task button {
+    width: 100%;
+    padding: 12px;
+    background: #007bff;
+    color: white;
+    font-weight: bold;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.add-task button:hover {
+    background: #0064cb;
+}
+
+/* FILTERS */
+.filters {
+    margin-bottom: 20px;
+}
+
+.filters h2 {
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.filter-buttons {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.filter-buttons button {
+    padding: 8px 16px;
+    border-radius: 20px;
+    border: 1px solid #ccc;
+    background: #fff;
+    cursor: pointer;
+}
+
+.filter-buttons button.active {
+    background: #007bff;
+    color: #fff;
+}
+
+/* TASK LIST */
+.task-list h2 {
+    margin-bottom: 15px;
+    color: #333;
+}
+
+.task-card {
+    background: #fff;
+    padding: 18px;
+    border-radius: 12px;
+    margin-bottom: 15px;
+    border-left: 6px solid #007bff;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.07);
+}
+
+.task-card.done {
+    opacity: 0.6;
+    text-decoration: line-through;
+    border-left-color: #28a745;
+}
+
+.task-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.important {
+    font-size: 1.4rem;
+    cursor: pointer;
+}
+
+.desc {
+    margin-top: 8px;
+    color: #555;
+}
+
+.deadline {
+    margin-top: 10px;
+    font-weight: bold;
+}
+
+.deadline.red {
+    color: #d9534f;
+}
+
+.deadline.green {
+    color: #28a745;
+}
+
+/* Task Actions */
+.task-actions {
+    margin-top: 12px;
+    display: flex;
+    gap: 10px;
+}
+
+.task-actions button {
+    flex: 1;
+    padding: 10px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+}
+
+.done-btn {
+    background: #28a745;
+    color: white;
+}
+
+.undo-btn {
+    background: #ffc107;
+}
+
+.delete-btn {
+    background: #dc3545;
+    color: white;
+}
+
+.done-btn:hover { background: #218838; }
+.undo-btn:hover { background: #e0a800; }
+.delete-btn:hover { background: #c82333; }
