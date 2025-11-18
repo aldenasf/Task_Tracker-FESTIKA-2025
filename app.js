@@ -1,275 +1,200 @@
-// Request notification permission
-if (Notification.permission !== "granted") {
-    Notification.requestPermission();
-}
-function notify(title, body) {
-    if (Notification.permission === "granted") {
-        new Notification(title, { body });
-    }
-}
-
-// INIT
+// LOAD TASKS
 let tasks = JSON.parse(localStorage.getItem("tasks") || "[]");
-const form = document.querySelector(".add-task form");
-const taskListContainer = document.querySelector(".task-list");
-const filterButtons = document.querySelectorAll(".filter-buttons button");
 
-// SAVE TO LOCALSTORAGE
+// ELEMENTS
+const taskList = document.getElementById("task-list");
+const filter = document.getElementById("filter");
+
+// SAVE
 function saveTasks() {
-    localStorage.setItem("tasks", JSON.stringify(tasks));
+  localStorage.setItem("tasks", JSON.stringify(tasks));
 }
-// ADD NEW TASK
-form.addEventListener("submit", function(e) {
-    e.preventDefault();
 
-    const title = form.querySelector("input").value;
-    const desc = form.querySelector("textarea").value;
-    const deadline = form.querySelector("input[type=datetime-local]").value;
+// ADD TASK
+document.getElementById("add-task").addEventListener("click", function(e) {
+  e.preventDefault();
 
-    const task = {
-        id: Date.now(),
-        title,
-        desc,
-        deadline,
-        done: false,
-        important: false,
+  const title = document.getElementById("task-title").value;
+  const deadline = document.getElementById("task-deadline").value;
+  const important = document.getElementById("task-important").value === "important";
+  const desc = document.getElementById("task-desc").value;  // AMBIL DESC
 
-        notified7: false,
-        notified3: false,
-        notified1: false,
-        notified10: false,
-        notifiedDue: false
-};
+    // VALIDASI FORM KOSONG
+    if (!title) {
+    showToast("Judule kok kosong rek? Ndang diisi 😭");
+    return;
+  }
+    if (!deadline) {
+    showToast("Deadline kosong i? PIYE TO KIHH? 😡");
+    return;
+  }
 
+  if (!title || !deadline) return;
 
-    tasks.push(task);
-    saveTasks();
-    renderTasks();
+  // CEK TANGGAL
+  const now = new Date();
+  now.setHours(0,0,0,0);
+  const chosen = new Date(deadline);
+  chosen.setHours(0,0,0,0);
 
-    form.reset();
+if (chosen < now) {
+  showToast("Rek, iki tanggal lawas lho! Kok isok mlebu kene? 😭🔥");
+  return;
+}
+
+  // BUAT TASK
+  tasks.push({
+    id: Date.now(),
+    title,
+    deadline,
+    important,
+    desc,         
+    done: false,
+    reminded: {}
+  });
+
+  saveTasks();
+  renderTasks();
+
+  // CLEAR INPUT
+  document.getElementById("task-title").value = "";
+  document.getElementById("task-deadline").value = "";
+  document.getElementById("task-important").value = "normal";
+  document.getElementById("task-desc").value = ""; // CLEAR DESC
 });
-
-// DELETE TASK
-function deleteTask(id) {
-    tasks = tasks.filter(t => t.id !== id);
-    saveTasks();
-    renderTasks();
-}
-
-// MARK AS DONE / UNDO
-function toggleDone(id) {
-    const t = tasks.find(x => x.id === id);
-    t.done = !t.done;
-    saveTasks();
-    renderTasks();
-}
-
-// IMPORTANT ⭐ TOGGLE
-function toggleImportant(id) {
-    const t = tasks.find(x => x.id === id);
-    t.important = !t.important;
-    saveTasks();
-    renderTasks();
-}
-
-// FILTER SYSTEM
-let activeFilter = "all";
-
-filterButtons.forEach(btn => {
-    btn.addEventListener("click", () => {
-        filterButtons.forEach(x => x.classList.remove("active"));
-        btn.classList.add("active");
-
-        activeFilter = btn.textContent.trim().toLowerCase();
-        renderTasks();
-    });
-});
-
-function applyFilter(task) {
-    const now = Date.now();
-    const dl = new Date(task.deadline).getTime();
-    const diff = dl - now;
-
-    if (activeFilter === "all") return true;
-    if (activeFilter === "important ⭐" || activeFilter === "important") return task.important;
-
-    if (activeFilter === "7 days left") {
-        return diff <= 7 * 24 * 60 * 60 * 1000 && diff > 0;
-    }
-    if (activeFilter === "3 days left") {
-        return diff <= 3 * 24 * 60 * 60 * 1000 && diff > 0;
-    }
-    if (activeFilter === "today") {
-        return diff <= 24 * 60 * 60 * 1000 && diff > 0;
-    }
-    if (activeFilter === "overdue") {
-        return diff < 0;
-    }
-
-    return true;
-}
-
-// DEADLINE COLOR
-function getDeadlineColor(deadline, done) {
-    if (done) return "green";
-
-    const now = Date.now();
-    const diff = new Date(deadline).getTime() - now;
-
-    if (diff < 0) return "red";
-    if (diff < 24*60*60*1000) return "red";
-    if (diff < 7*24*60*60*1000) return "orange";
-
-    return "green";
-}
 
 // RENDER TASKS
 function renderTasks() {
-    const list = document.querySelector(".task-list");
-    list.innerHTML = "<h2>Your Tasks</h2>";
+  taskList.innerHTML = "";
 
-    const filtered = tasks.filter(applyFilter);
+  let filtered = tasks;
 
-    if (filtered.length === 0) {
-        list.innerHTML += `<p style="opacity:0.6;">No tasks match this filter.</p>`;
-        return;
-    }
+  if (filter.value === "important")
+    filtered = tasks.filter(t => t.important);
 
-    filtered.forEach(t => {
-        const dlColor = getDeadlineColor(t.deadline, t.done);
+  if (filter.value === "done")
+    filtered = tasks.filter(t => t.done);
 
-        const card = document.createElement("div");
-        card.className = "task-card";
-        if (t.done) card.classList.add("done");
+  filtered.forEach(t => {
+    // HITUNG WARNA
+    const diffDays = Math.ceil((new Date(t.deadline) - new Date()) / (1000 * 60 * 60 * 24));
+    let noteColor = "note-green";
 
-        card.innerHTML = `
-            <div class="task-header">
-                <h3>${t.title}</h3>
-                <span class="important" onclick="toggleImportant(${t.id})">
-                    ${t.important ? "⭐" : "☆"}
-                </span>
-            </div>
-            
-            <p class="desc">${t.desc}</p>
+    if (diffDays <= 3 && diffDays >= 1) noteColor = "note-orange";
+    if (diffDays < 1) noteColor = "note-red";
 
-            <p class="deadline ${dlColor}">
-                ${t.done ? "Completed" : "Deadline: " + t.deadline.replace("T", " ")}
-            </p>
+    // DEADLINE TEXT COLOR
+    let deadlineColor = "green";
+    if (diffDays <= 3 && diffDays >= 1) deadlineColor = "orange";
+    if (diffDays < 1) deadlineColor = "red";
 
-            <div class="task-actions">
-                ${
-                    t.done 
-                    ? `<button class="undo-btn" onclick="toggleDone(${t.id})">Undo</button>`
-                    : `<button class="done-btn" onclick="toggleDone(${t.id})">Mark as Done</button>`
-                }
-                <button class="delete-btn" onclick="deleteTask(${t.id})">Delete</button>
-            </div>
-        `;
+    // STICKY NOTE ELEMENT
+    const card = document.createElement("div");
+    card.className = `task-card ${noteColor}` + (t.done ? " done" : "");
 
-        list.appendChild(card);
-    });
-}
-// FUNGSI REMINDER
-function checkReminders() {
-    const now = Date.now();
+    card.innerHTML = `
+      <div class="task-header">
+        <h3>${t.title}</h3>
+        <span onclick="toggleImportant(${t.id})">
+          ${t.important ? "⭐" : "☆"}
+        </span>
+      </div>
 
-    tasks.forEach(task => {
-        if (task.done) return; // tidak notif task sudah selesai
+      <p class="task-desc">${t.desc || "(no description)"}</p>
 
-        const deadline = new Date(task.deadline).getTime();
-        const diff = deadline - now;
+      <p class="deadline ${deadlineColor}">
+        ${t.done ? "Completed" : "Deadline: " + t.deadline}
+      </p>
 
-        const sevenDays = 7 * 24 * 60 * 60 * 1000;
-        const threeDays = 3 * 24 * 60 * 60 * 1000;
-        const oneDay = 1 * 24 * 60 * 60 * 1000;
-        const tenMinutes = 10 * 60 * 1000;
-
-        // 7 hari
-        if (!task.notified7 && diff <= sevenDays && diff > threeDays) {
-            notify("Reminder 7 Hari", `${task.title} akan jatuh tempo dalam 7 hari.`);
-            task.notified7 = true;
+      <div class="task-actions">
+        ${
+          t.done
+            ? `<button class="undo-btn" onclick="toggleDone(${t.id})">Undo</button>`
+            : `<button class="done-btn" onclick="toggleDone(${t.id})">Done</button>`
         }
+        <button class="delete-btn" onclick="deleteTask(${t.id})">Delete</button>
+      </div>
+    `;
 
-        // 3 hari
-        if (!task.notified3 && diff <= threeDays && diff > oneDay) {
-            notify("Reminder 3 Hari", `${task.title} tinggal 3 hari lagi.`);
-            task.notified3 = true;
-        }
-
-        // 1 hari
-        if (!task.notified1 && diff <= oneDay && diff > tenMinutes) {
-            notify("Reminder Besok", `${task.title} deadlinenya besok.`);
-            task.notified1 = true;
-        }
-
-        // 10 menit
-        if (!task.notified10 && diff <= tenMinutes && diff > 0) {
-            notify("Reminder 10 Menit", `${task.title} deadlinenya 10 menit lagi!`);
-            task.notified10 = true;
-        }
-
-        // Hari H
-        if (!task.notifiedDue && diff <= 0) {
-            notify("Deadline Sekarang!", `${task.title} sudah saatnya dikerjakan sekarang.`);
-            task.notifiedDue = true;
-        }
-
-        saveTasks();
-    });
+    taskList.appendChild(card);
+  });
 }
 
-function runReminderSystem() {
-  const tasks = loadTasks();
+// DELETE / TOGGLE
+function deleteTask(id) {
+  tasks = tasks.filter(t => t.id !== id);
+  saveTasks();
+  renderTasks();
+}
+
+function toggleDone(id) {
+  const t = tasks.find(x => x.id === id);
+  t.done = !t.done;
+  saveTasks();
+  renderTasks();
+}
+
+function toggleImportant(id) {
+  const t = tasks.find(x => x.id === id);
+  t.important = !t.important;
+  saveTasks();
+  renderTasks();
+}
+
+filter.addEventListener("change", renderTasks);
+
+// TOAST
+function showToast(msg) {
+    const toast = document.getElementById("toast");
+    const toastText = document.getElementById("toast-text");
+
+    toastText.textContent = msg;
+    toast.classList.remove("hidden");
+    toast.classList.add("show");
+
+    setTimeout(() => {
+        toast.classList.remove("show");
+        setTimeout(() => {
+            toast.classList.add("hidden");
+        }, 300);
+    }, 2500); 
+}
+
+// REMINDER
+function reminderCheck() {
   const now = new Date();
 
-  tasks.forEach(task => {
-    if (!task.deadline || task.done) return;
+  tasks.forEach(t => {
+    if (t.done) return;
 
-    const deadline = new Date(task.deadline);
+    const deadline = new Date(t.deadline);
     const diffDays = Math.ceil((deadline - now) / (1000 * 60 * 60 * 24));
 
-    // sudah diingatkan? (biar ga spam)
-    if (!task.reminded) task.reminded = {};
-
-    // reminder 7 hari
-    if (diffDays === 7 && !task.reminded["7d"]) {
-      showPopup("Reminder (7 hari lagi)", `Tugas "${task.title}" akan jatuh tempo 7 hari lagi!`);
-      task.reminded["7d"] = true;
+    if (!t.reminded["7d"] && diffDays === 7) {
+      showToast(`${t.title} - Wes tinggal 7 dina, ojo lali yo rek`);
+      t.reminded["7d"] = true;
     }
 
-    // reminder 3 hari
-    if (diffDays === 3 && !task.reminded["3d"]) {
-      showPopup("Reminder (3 hari lagi)", `Tugas "${task.title}" akan jatuh tempo 3 hari lagi!`);
-      task.reminded["3d"] = true;
+    if (!t.reminded["3d"] && diffDays === 3) {
+      showToast(`${t.title} - Rek, kurang 3 dina. Gas pol ae!`);
+      t.reminded["3d"] = true;
     }
 
-    // reminder hari H
-    if (diffDays === 0 && !task.reminded["due"]) {
-      showPopup("Deadline Hari Ini", `Tugas "${task.title}" harus diselesaikan hari ini!`);
-      task.reminded["due"] = true;
+    if (!t.reminded["1d"] && diffDays === 1) {
+      showToast(`${t.title} - Sesok wes deadline rek! Ayo dikebut dikit`);
+      t.reminded["1d"] = true;
+    }
+
+    if (!t.reminded["due"] && diffDays <= 0) {
+      showToast(`${t.title} - DEADLINE DINO IKI! GEK NDANGG 🙏`);
+      t.reminded["due"] = true;
     }
   });
 
-  // simpan balik reminder flags
-  saveTasks(tasks);
-}
-// cek setiap 30 detik
-setInterval(runReminderSystem, 30000);
-
-// POPUP NOTIFICATION
-function showPopup(title, message) {
-  const popup = document.getElementById("popup");
-  const t = document.getElementById("popup-title");
-  const msg = document.getElementById("popup-message");
-  const close = document.getElementById("popup-close");
-
-  t.textContent = title;
-  msg.textContent = message;
-
-  popup.classList.remove("hidden");
-
-  close.onclick = () => popup.classList.add("hidden");
+  saveTasks();
 }
 
-// Initial render
+setInterval(reminderCheck, 30000);
+
+// INITIAL RENDER
 renderTasks();
