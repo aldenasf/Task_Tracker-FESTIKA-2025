@@ -74,6 +74,9 @@ function renderTasks() {
 
   if (filter.value === "done")
     filtered = tasks.filter(t => t.done);
+  
+  if (filter.value === "overdue")
+  filtered = tasks.filter(t => !t.done && new Date(t.deadline) < new Date());
 
   filtered.forEach(t => {
     // HITUNG WARNA
