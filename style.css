@@ -134,7 +134,7 @@ header {
     transform: translateX(-50%);
     width: 90px;
     height: 15px;
-    background: rgba(255, 255, 255, 0.8);
+    background: rgba(145, 145, 145, 1);
     border-radius: 4px;
     box-shadow: 0 2px 3px rgba(0, 0, 0, 0.15);
 }
